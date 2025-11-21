@@ -53,5 +53,6 @@ import '../video-quality/middleware';
 import '../videosipgw/middleware';
 import '../visitors/middleware';
 import '../whiteboard/middleware.any';
+import '../network-adaptive-mode/middleware';
 
 import './middleware';
