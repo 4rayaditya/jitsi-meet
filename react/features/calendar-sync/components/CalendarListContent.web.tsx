@@ -88,7 +88,8 @@ class CalendarListContent extends Component<IProps> {
                 disabled = { disabled }
                 listEmptyComponent = { listEmptyComponent }
                 meetings = { meetings }
-                onPress = { this._onPress } />
+                onPress = { this._onPress }
+                showDesktopClientButton = { this.props._enableJitsiLinks } />
         );
     }
 
@@ -156,6 +157,7 @@ class CalendarListContent extends Component<IProps> {
  */
 function _mapStateToProps(state: IReduxState) {
     return {
+        _enableJitsiLinks: state['features/base/config'].enableJitsiLinks || false,
         _eventList: state['features/calendar-sync'].events
     };
 }

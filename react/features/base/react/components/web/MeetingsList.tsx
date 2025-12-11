@@ -49,6 +49,11 @@ interface IProps extends WithTranslation {
      * Function to be invoked when an item is pressed. The item's URL is passed.
      */
     onPress: Function;
+
+    /**
+     * Whether to show desktop client buttons for meetings.
+     */
+    showDesktopClientButton?: boolean;
 }
 
 /**
@@ -97,6 +102,7 @@ class MeetingsList extends Component<IProps> {
         super(props);
 
         this._onPress = this._onPress.bind(this);
+        this._onJitsiLinkPress = this._onJitsiLinkPress.bind(this);
         this._renderItem = this._renderItem.bind(this);
     }
 
@@ -182,20 +188,20 @@ class MeetingsList extends Component<IProps> {
     }
 
     /**
-     * Returns a function that is used on the onDelete keypress callback.
+     * Returns a function that opens the meeting in the desktop client.
      *
-     * @param {Object} item - The item to be deleted.
+     * @param {string} url - The URL of the meeting.
      * @private
      * @returns {Function}
      */
-    _onDeleteKeyPress(item: Object) {
-        const { onItemDelete } = this.props;
+    _onJitsiLinkPress(url: string) {
+        return () => {
+            // Extract room name from URL
+            const urlObj = new URL(url);
+            const roomName = urlObj.pathname.split('/').pop() || '';
 
-        return (e: React.KeyboardEvent) => {
-            if (onItemDelete && (e.key === ' ' || e.key === 'Enter')) {
-                e.preventDefault();
-                e.stopPropagation();
-                onItemDelete(item);
+            if (roomName) {
+                window.location.href = `jitsi-meet://${roomName}`;
             }
         };
     }
@@ -260,6 +266,16 @@ class MeetingsList extends Component<IProps> {
                 </Container>
                 <Container className = 'actions'>
                     { elementAfter || null }
+
+                    { this.props.showDesktopClientButton && (
+                        <button
+                            aria-label = { t('welcomepage.joinWithDesktopClient') }
+                            className = 'meeting-list-desktop-button'
+                            onClick = { this._onJitsiLinkPress(url) }
+                            type = 'button'>
+                            {t('welcomepage.joinWithDesktopClient')}
+                        </button>
+                    )}
 
                     { onItemDelete && <Icon
                         ariaLabel = { t('welcomepage.recentListDelete') }

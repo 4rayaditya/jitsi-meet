@@ -151,6 +151,52 @@
         }
     }
 
+    .meeting-list-desktop-button {
+        background: #0074E0;
+        border: none;
+        border-radius: 4px;
+        color: #FFFFFF;
+        cursor: pointer;
+        font-size: 0.75rem;
+        margin-right: 8px;
+        padding: 6px 12px;
+        white-space: nowrap;
+
+        &:hover {
+            background: #0163FF;
+        }
+
+        &:focus {
+            outline: 2px solid #4687ED;
+        }
+    }
+
+    .meetings-list-desktop-link {
+        background: #0074E0;
+        border: none;
+        border-radius: 4px;
+        color: #FFFFFF;
+        cursor: pointer;
+        padding: 6px 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 8px;
+
+        &:hover {
+            background: #0163FF;
+        }
+
+        &:focus {
+            outline: 2px solid #4687ED;
+        }
+
+        svg {
+            width: 16px;
+            height: 16px;
+        }
+    }
+
     .delete-meeting {
         display: none;
         margin-right: 16px;

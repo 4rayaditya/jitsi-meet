@@ -43,6 +43,11 @@ interface IProps extends WithTranslation {
     _dialInVisible: boolean;
 
     /**
+     * Whether to enable jitsi-meet:// links.
+     */
+    _enableJitsiLinks?: boolean;
+
+    /**
      * Whether or not email sharing features should be visible.
      */
     _emailSharingVisible: boolean;
@@ -107,6 +112,7 @@ interface IProps extends WithTranslation {
 function AddPeopleDialog({
     _dialIn,
     _dialInVisible,
+    _enableJitsiLinks,
     _urlSharingVisible,
     _emailSharingVisible,
     _invitationText,
@@ -156,7 +162,7 @@ function AddPeopleDialog({
             titleKey = 'addPeople.inviteMorePrompt'>
             <div className = 'invite-more-dialog'>
                 { _inviteContactsVisible && <InviteContactsSection /> }
-                {_urlSharingVisible ? <CopyMeetingLinkSection url = { _inviteUrl } /> : null}
+                {_urlSharingVisible ? <CopyMeetingLinkSection enableJitsiLinks = { _enableJitsiLinks } url = { _inviteUrl } /> : null}
                 {
                     _emailSharingVisible
                         ? <InviteByEmailSection
@@ -206,6 +212,7 @@ function mapStateToProps(state: IReduxState, ownProps: Partial<IProps>) {
     return {
         _dialIn: dialIn,
         _dialInVisible: isSharingEnabled(sharingFeatures.dialIn),
+        _enableJitsiLinks: state['features/base/config'].enableJitsiLinks || false,
         _urlSharingVisible: isDynamicBrandingDataLoaded(state) && isSharingEnabled(sharingFeatures.url),
         _emailSharingVisible: isSharingEnabled(sharingFeatures.email),
         _invitationText: getInviteText({ state,

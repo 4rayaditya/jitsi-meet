@@ -34,6 +34,11 @@ export interface IProps extends WithTranslation {
     _enableInsecureRoomNameWarning: boolean;
 
     /**
+     * Whether jitsi-meet:// links are enabled.
+     */
+    _enableJitsiLinks: boolean;
+
+    /**
      * URL for the moderated rooms microservice, if available.
      */
     _moderatedRoomServiceUrl?: string;
@@ -290,6 +295,7 @@ export function _mapStateToProps(state: IReduxState) {
         _calendarEnabled: isCalendarEnabled(state),
         _deeplinkingCfg: state['features/base/config'].deeplinking || {},
         _enableInsecureRoomNameWarning: isUnsafeRoomWarningEnabled(state),
+        _enableJitsiLinks: state['features/base/config'].enableJitsiLinks || false,
         _moderatedRoomServiceUrl: state['features/base/config'].moderatedRoomServiceUrl,
         _recentListEnabled: isRecentListEnabled(),
         _room: state['features/base/conference'].room ?? '',

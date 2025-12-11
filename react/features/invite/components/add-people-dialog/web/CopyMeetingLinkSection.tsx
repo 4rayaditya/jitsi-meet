@@ -9,6 +9,11 @@ import { getDecodedURI } from '../../../../base/util/uri';
 interface IProps {
 
     /**
+     * Whether to enable jitsi-meet:// links.
+     */
+    enableJitsiLinks?: boolean;
+
+    /**
      * The URL of the conference.
      */
     url: string;
@@ -28,9 +33,12 @@ const useStyles = makeStyles()(theme => {
  *
  * @returns {React$Element<any>}
  */
-function CopyMeetingLinkSection({ url }: IProps) {
+function CopyMeetingLinkSection({ enableJitsiLinks, url }: IProps) {
     const { classes } = useStyles();
     const { t } = useTranslation();
+
+    const roomName = url.split('/').pop();
+    const jitsiLink = roomName ? `jitsi-meet://${roomName}` : '';
 
     return (
         <>
@@ -43,6 +51,19 @@ function CopyMeetingLinkSection({ url }: IProps) {
                 textOnCopySuccess = { t('addPeople.linkCopied') }
                 textOnHover = { t('addPeople.copyLink') }
                 textToCopy = { url } />
+            {enableJitsiLinks && jitsiLink && (
+                <>
+                    <p className = { classes.label } style = {{ marginTop: '16px' }}>{t('addPeople.desktopClientLink')}</p>
+                    <CopyButton
+                        accessibilityText = { t('addPeople.desktopClientLink') }
+                        className = 'invite-more-dialog-desktop-url'
+                        displayedText = { jitsiLink }
+                        id = 'add-people-copy-desktop-link-button'
+                        textOnCopySuccess = { t('addPeople.linkCopied') }
+                        textOnHover = { t('addPeople.copyLink') }
+                        textToCopy = { jitsiLink } />
+                </>
+            )}
         </>
     );
 }
