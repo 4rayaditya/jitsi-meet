@@ -132,6 +132,7 @@ export function getMoreTabProps(stateful: IStateful) {
 
     return {
         areClosedCaptionsEnabled: areClosedCaptionsEnabled(state),
+        autoPipEnabled: state['features/base/settings'].autoPipEnabled !== false,
         currentLanguage: language,
         disableHideSelfView: disableSelfViewSettings || disableSelfView,
         hideSelfView: getHideSelfView(state),

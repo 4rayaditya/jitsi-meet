@@ -23,6 +23,11 @@ export interface IProps extends AbstractDialogTabProps, WithTranslation {
     areClosedCaptionsEnabled: boolean;
 
     /**
+     * Whether automatic PiP is enabled.
+     */
+    autoPipEnabled: boolean;
+
+    /**
      * CSS classes object.
      */
     classes?: Partial<Record<keyof ReturnType<typeof styles>, string>>;
@@ -126,6 +131,7 @@ class MoreTab extends AbstractDialogTab<IProps, any> {
         this._onMaxStageParticipantsSelect = this._onMaxStageParticipantsSelect.bind(this);
         this._onHideSelfViewChanged = this._onHideSelfViewChanged.bind(this);
         this._onShowSubtitlesOnStageChanged = this._onShowSubtitlesOnStageChanged.bind(this);
+        this._onAutoPipChanged = this._onAutoPipChanged.bind(this);
         this._onLanguageItemSelect = this._onLanguageItemSelect.bind(this);
     }
 
@@ -138,6 +144,7 @@ class MoreTab extends AbstractDialogTab<IProps, any> {
     override render() {
         const {
             areClosedCaptionsEnabled,
+            autoPipEnabled,
             disableHideSelfView,
             iAmVisitor,
             hideSelfView,
@@ -166,6 +173,12 @@ class MoreTab extends AbstractDialogTab<IProps, any> {
                     label = { t('settings.showSubtitlesOnStage') }
                     name = 'show-subtitles-button'
                     onChange = { this._onShowSubtitlesOnStageChanged } /> }
+                <Checkbox
+                    checked = { autoPipEnabled }
+                    className = { classes.checkbox }
+                    label = 'Enable Automatic Picture-in-Picture'
+                    name = 'enable-auto-pip'
+                    onChange = { this._onAutoPipChanged } />
                 {showLanguageSettings && this._renderLanguageSelect()}
             </div>
         );
@@ -204,6 +217,16 @@ class MoreTab extends AbstractDialogTab<IProps, any> {
      */
     _onShowSubtitlesOnStageChanged({ target: { checked } }: React.ChangeEvent<HTMLInputElement>) {
         super._onChange({ showSubtitlesOnStage: checked });
+    }
+
+    /**
+     * Callback invoked to set automatic Picture-in-Picture.
+     *
+     * @param {Object} e - The key event to handle.
+     * @returns {void}
+     */
+    _onAutoPipChanged({ target: { checked } }: React.ChangeEvent<HTMLInputElement>) {
+        super._onChange({ autoPipEnabled: checked });
     }
 
     /**

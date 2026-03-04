@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { I18nextProvider } from 'react-i18next';
 
 import { isMobileBrowser } from '../../../base/environment/utils';
@@ -20,8 +21,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const ix = href.indexOf(DIAL_IN_INFO_PAGE_PATH_NAME);
     const url = (ix > 0 ? href.substring(0, ix) : href) + room;
 
-    /* eslint-disable-next-line react/no-deprecated */
-    ReactDOM.render(
+    const el = document.getElementById('react');
+
+    if (!el) {
+        return;
+    }
+
+    if (!el._jitsiRoot) {
+        el._jitsiRoot = createRoot(el);
+    }
+
+    el._jitsiRoot.render(
         <I18nextProvider i18n = { i18next }>
             { room
                 ? <DialInSummary
@@ -30,12 +40,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     room = { decodeURIComponent(room) }
                     url = { url } />
                 : <NoRoomError className = 'dial-in-page' /> }
-        </I18nextProvider>,
-        document.getElementById('react')
+        </I18nextProvider>
     );
 });
 
 window.addEventListener('beforeunload', () => {
-    /* eslint-disable-next-line react/no-deprecated */
-    ReactDOM.unmountComponentAtNode(document.getElementById('react')!);
+    const el = document.getElementById('react');
+
+    if (el && el._jitsiRoot) {
+        el._jitsiRoot.unmount();
+    }
 });

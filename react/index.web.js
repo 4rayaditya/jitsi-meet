@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 
 import { App } from './features/app/components/App.web';
 import { getLogger } from './features/base/logging/functions';
@@ -77,9 +78,15 @@ globalNS.renderEntryPoint = ({
     props = {},
     elementId = 'react'
 }) => {
-    /* eslint-disable-next-line react/no-deprecated */
-    ReactDOM.render(
-        <Component { ...props } />,
-        document.getElementById(elementId)
-    );
+    const el = document.getElementById(elementId);
+
+    if (!el) {
+        return;
+    }
+
+    if (!el._jitsiRoot) {
+        el._jitsiRoot = createRoot(el);
+    }
+
+    el._jitsiRoot.render(<Component { ...props } />);
 };

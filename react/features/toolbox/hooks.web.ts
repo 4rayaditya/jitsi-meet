@@ -57,6 +57,7 @@ import { useSpeakerStatsButton } from '../speaker-stats/hooks.web';
 import { useClosedCaptionButton } from '../subtitles/hooks.web';
 import { toggleTileView } from '../video-layout/actions.any';
 import { shouldDisplayTileView } from '../video-layout/functions.web';
+import { useDocPipButton } from '../doc-pip/hooks.web';
 import { useTileViewButton } from '../video-layout/hooks';
 import VideoQualityButton from '../video-quality/components/VideoQualityButton.web';
 import VideoQualityDialog from '../video-quality/components/VideoQualityDialog.web';
@@ -309,6 +310,7 @@ export function useToolboxButtons(
     const _help = useHelpButton();
     const _invite = useInviteButton();
     const customPanel = useCustomPanelButton();
+    const docPip = useDocPipButton();
 
     const buttons: { [key in ToolbarButton]?: IToolboxButton; } = {
         microphone,
@@ -344,7 +346,8 @@ export function useToolboxButtons(
         feedback,
         download: _download,
         help: _help,
-        'custom-panel': customPanel
+        'custom-panel': customPanel,
+        'doc-pip': docPip
     };
     const buttonKeys = Object.keys(buttons) as ToolbarButton[];
 

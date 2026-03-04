@@ -5,6 +5,7 @@ import JitsiThemeProvider from '../../base/ui/components/JitsiThemeProvider.web'
 import DialogContainer from '../../base/ui/components/web/DialogContainer';
 import ChromeExtensionBanner from '../../chrome-extension-banner/components/ChromeExtensionBanner.web';
 import OverlayContainer from '../../overlay/components/web/OverlayContainer';
+import DocPipWindow from '../../doc-pip/DocPipWindow';
 import PiP from '../../pip/components/PiP';
 
 import { AbstractApp } from './AbstractApp';
@@ -49,6 +50,7 @@ export class App extends AbstractApp {
                 <GlobalStyles />
                 <ChromeExtensionBanner />
                 <PiP />
+                <DocPipWindow />
                 { super._createMainElement(component, props) }
             </JitsiThemeProvider>
         );

@@ -14,6 +14,7 @@ import '../notifications/middleware';
 import '../noise-detection/middleware';
 import '../old-client-notification/middleware';
 import '../pip/middleware';
+import '../doc-pip/middleware';
 import '../power-monitor/middleware';
 import '../prejoin/middleware';
 import '../remote-control/middleware';

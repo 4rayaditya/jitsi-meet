@@ -58,6 +58,7 @@ import { INoiseDetectionState } from '../noise-detection/reducer';
 import { INoiseSuppressionState } from '../noise-suppression/reducer';
 import { INotificationsState } from '../notifications/reducer';
 import { IParticipantsPaneState } from '../participants-pane/reducer';
+import { IDocPipState } from '../doc-pip/reducer';
 import { IPipState } from '../pip/reducer';
 import { IPollsState } from '../polls/reducer';
 import { IPollsHistoryState } from '../polls-history/reducer';
@@ -148,6 +149,7 @@ export interface IReduxState {
     'features/noise-suppression': INoiseSuppressionState;
     'features/notifications': INotificationsState;
     'features/participants-pane': IParticipantsPaneState;
+    'features/doc-pip': IDocPipState;
     'features/pip': IPipState;
     'features/polls': IPollsState;
     'features/polls-history': IPollsHistoryState;

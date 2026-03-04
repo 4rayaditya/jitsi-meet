@@ -15,6 +15,7 @@ import { SETTINGS_UPDATED } from './actionTypes';
  * @type Object
  */
 const DEFAULT_STATE: ISettingsState = {
+    autoPipEnabled: true,
     audioOutputDeviceId: undefined,
     avatarURL: undefined,
     cameraDeviceId: undefined,
@@ -58,6 +59,7 @@ export interface IAudioSettings {
     noiseSuppression?: boolean;
 }
 export interface ISettingsState {
+    autoPipEnabled?: boolean;
     audioOutputDeviceId?: string;
     audioSettings?: IAudioSettings;
     audioSettingsVisible?: boolean;

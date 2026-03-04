@@ -321,6 +321,7 @@ function _mapStateToProps(state: IReduxState, ownProps: any) {
 
                 return {
                     ...newProps,
+                    autoPipEnabled: tabState?.autoPipEnabled,
                     currentLanguage: tabState?.currentLanguage,
                     hideSelfView: tabState?.hideSelfView,
                     showSubtitlesOnStage: tabState?.showSubtitlesOnStage,

@@ -4,6 +4,7 @@ import Logger from '@jitsi/logger';
 import $ from 'jquery';
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { I18nextProvider } from 'react-i18next';
 import { Provider } from 'react-redux';
 
@@ -166,7 +167,9 @@ export default class LargeVideoManager {
 
         this.removePresenceLabel();
 
-        ReactDOM.unmountComponentAtNode(this._dominantSpeakerAvatarContainer);
+        if (this._dominantSpeakerAvatarContainer && this._dominantSpeakerAvatarContainer._jitsiRoot) {
+            this._dominantSpeakerAvatarContainer._jitsiRoot.unmount();
+        }
 
         this.container.style.display = 'none';
     }
@@ -518,14 +521,23 @@ export default class LargeVideoManager {
      * Updates the src of the dominant speaker avatar
      */
     updateAvatar() {
-        ReactDOM.render(
+        const container = this._dominantSpeakerAvatarContainer;
+
+        if (!container) {
+            return;
+        }
+
+        if (!container._jitsiRoot) {
+            container._jitsiRoot = createRoot(container);
+        }
+
+        container._jitsiRoot.render(
             <Provider store = { APP.store }>
                 <Avatar
                     id = "dominantSpeakerAvatar"
                     participantId = { this.id }
                     size = { 200 } />
-            </Provider>,
-            this._dominantSpeakerAvatarContainer
+            </Provider>
         );
     }
 
@@ -559,15 +571,19 @@ export default class LargeVideoManager {
         const presenceLabelContainer = document.getElementById('remotePresenceMessage');
 
         if (presenceLabelContainer) {
-            ReactDOM.render(
+            if (!presenceLabelContainer._jitsiRoot) {
+                presenceLabelContainer._jitsiRoot = createRoot(presenceLabelContainer);
+            }
+
+            presenceLabelContainer._jitsiRoot.render(
                 <Provider store = { APP.store }>
                     <I18nextProvider i18n = { i18next }>
                         <PresenceLabel
                             participantID = { id }
                             className = 'presence-label' />
                     </I18nextProvider>
-                </Provider>,
-                presenceLabelContainer);
+                </Provider>
+            );
         }
     }
 
@@ -580,7 +596,9 @@ export default class LargeVideoManager {
         const presenceLabelContainer = document.getElementById('remotePresenceMessage');
 
         if (presenceLabelContainer) {
-            ReactDOM.unmountComponentAtNode(presenceLabelContainer);
+            if (presenceLabelContainer._jitsiRoot) {
+                presenceLabelContainer._jitsiRoot.unmount();
+            }
         }
     }
 
