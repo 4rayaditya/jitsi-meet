@@ -15,6 +15,10 @@ import { isToggleCameraEnabled } from '../base/tracks/functions.web';
 import { toggleChat } from '../chat/actions.web';
 import { isChatDisabled } from '../chat/functions';
 import { useChatButton } from '../chat/hooks.web';
+import { togglePip } from '../doc-pip/actions';
+import DocPipButton from '../doc-pip/components/DocPipButton';
+import { getBestPipMode } from '../doc-pip/functions';
+import { TRIGGER_SHORTCUT } from '../doc-pip/types';
 import { useEmbedButton } from '../embed-meeting/hooks';
 import { useEtherpadButton } from '../etherpad/hooks';
 import { useFeedbackButton } from '../feedback/hooks.web';
@@ -60,6 +64,7 @@ import VideoQualityButton from '../video-quality/components/VideoQualityButton.w
 import VideoQualityDialog from '../video-quality/components/VideoQualityDialog.web';
 import { useVirtualBackgroundButton } from '../virtual-background/hooks';
 import { useWhiteboardButton } from '../whiteboard/hooks';
+
 
 import { setFullScreen } from './actions.web';
 import DownloadButton from './components/DownloadButton';
@@ -169,6 +174,12 @@ const help = {
     group: 4
 };
 
+const pip = {
+    key: 'pip',
+    Content: DocPipButton,
+    group: 2
+};
+
 /**
  * A hook that returns the toggle camera button if it is enabled and undefined otherwise.
  *
@@ -260,6 +271,17 @@ function useHelpButton() {
 }
 
 /**
+ * A hook that returns the PiP button if any PiP mode is available.
+ *
+ *  @returns {Object | undefined}
+ */
+function usePipButton() {
+    if (getBestPipMode() !== null) {
+        return pip;
+    }
+}
+
+/**
 * Returns all buttons that could be rendered.
 *
 * @param {Object} _customToolbarButtons - An array containing custom buttons objects.
@@ -292,6 +314,7 @@ export function useToolboxButtons(
     const feedback = useFeedbackButton();
     const _download = useDownloadButton();
     const _help = useHelpButton();
+    const _pip = usePipButton();
 
     const buttons: { [key in ToolbarButton]?: IToolboxButton; } = {
         microphone,
@@ -326,7 +349,8 @@ export function useToolboxButtons(
         embedmeeting: embed,
         feedback,
         download: _download,
-        help: _help
+        help: _help,
+        pip: _pip
     };
     const buttonKeys = Object.keys(buttons) as ToolbarButton[];
 
@@ -528,6 +552,17 @@ export const useKeyboardShortcuts = (toolbarButtons: Array<string>) => {
         }));
     }
 
+    /**
+     * Toggles Picture-in-Picture mode.
+     *
+     * @private
+     * @returns {void}
+     */
+    function onTogglePip() {
+        sendAnalytics(createShortcutEvent('toggle.pip'));
+        dispatch(togglePip(TRIGGER_SHORTCUT));
+    }
+
     useEffect(() => {
         const KEYBOARD_SHORTCUTS = [
             isButtonEnabled('videoquality', _toolbarButtons) && {
@@ -569,6 +604,11 @@ export const useKeyboardShortcuts = (toolbarButtons: Array<string>) => {
                 character: 'T',
                 exec: onSpeakerStats,
                 helpDescription: 'keyboardShortcuts.showSpeakerStats'
+            },
+            isButtonEnabled('pip', _toolbarButtons) && {
+                character: 'I',
+                exec: onTogglePip,
+                helpDescription: 'keyboardShortcuts.togglePip'
             }
         ];
 
@@ -626,7 +666,7 @@ export const useKeyboardShortcuts = (toolbarButtons: Array<string>) => {
         }
 
         return () => {
-            [ 'A', 'C', 'D', 'P', 'R', 'S', 'W', 'T', 'G' ].forEach(letter =>
+            [ 'A', 'C', 'D', 'I', 'P', 'R', 'S', 'W', 'T', 'G' ].forEach(letter =>
                 dispatch(unregisterShortcut(letter)));
 
             if (_shouldDisplayReactionsButtons) {

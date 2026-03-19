@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 
 import { App } from './features/app/components/App.web';
 import { getLogger } from './features/base/logging/functions';
@@ -77,9 +78,16 @@ globalNS.renderEntryPoint = ({
     props = {},
     elementId = 'react'
 }) => {
-    /* eslint-disable-next-line react/no-deprecated */
-    ReactDOM.render(
-        <Component { ...props } />,
-        document.getElementById(elementId)
-    );
+    const container = document.getElementById(elementId);
+
+    if (!container) {
+        return;
+    }
+
+    // Prefer createRoot for React 18. If a root was already created by
+    // previous calls, createRoot will replace the existing root for this
+    // container.
+    const root = createRoot(container);
+
+    root.render(<Component { ...props } />);
 };

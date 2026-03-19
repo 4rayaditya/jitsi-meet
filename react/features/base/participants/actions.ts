@@ -62,7 +62,7 @@ import { FakeParticipant, IJitsiParticipant, IParticipant } from './types';
  * }}
  */
 export function dominantSpeakerChanged(
-        dominantSpeaker: string, previousSpeakers: string[], silence: boolean, conference: IJitsiConference) {
+    dominantSpeaker: string, previousSpeakers: string[], silence: boolean, conference: IJitsiConference) {
     return {
         type: DOMINANT_SPEAKER_CHANGED,
         participant: {
@@ -247,7 +247,7 @@ export function participantJoined(participant: IParticipant) {
             = getState()['features/base/conference'];
 
         if (conference === stateFeaturesBaseConference.conference
-                || conference === stateFeaturesBaseConference.joining) {
+            || conference === stateFeaturesBaseConference.joining) {
             return dispatch({
                 type: PARTICIPANT_JOINED,
                 participant
@@ -687,3 +687,4 @@ export function updateLocalRecordingStatus(recording: boolean, onlySelf?: boolea
         onlySelf
     };
 }
+

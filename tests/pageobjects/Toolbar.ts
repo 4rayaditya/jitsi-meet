@@ -10,6 +10,8 @@ const HANGUP = 'Leave the meeting';
 const OVERFLOW_MENU = 'More actions menu';
 const OVERFLOW = 'More actions';
 const PARTICIPANTS = 'Open participants pane';
+const PIP = 'Toggle Picture-in-Picture mode';
+const EXIT_PIP = 'Exit Picture-in-Picture mode';
 const PROFILE = 'Edit your profile';
 const RAISE_HAND = 'Raise your hand';
 const SECURITY = 'Security options';
@@ -97,6 +99,13 @@ export default class Toolbar extends BasePageObject {
     }
 
     /**
+     * The Picture-in-Picture button (toggle).
+     */
+    get pipBtn() {
+        return this.participant.driver.$(`[aria-label="${PIP}"], [aria-label="${EXIT_PIP}"]`);
+    }
+
+    /**
      * Clicks video mute button.
      *
      * @returns {Promise<void>}
@@ -126,6 +135,30 @@ export default class Toolbar extends BasePageObject {
 
         // not directly clicking the button to avoid issues of UI notifications preventing it
         return this.participant.execute(() => JitsiMeetJS.app.testing.videoUnmute());
+    }
+
+    /**
+     * Waits for the PiP button to exist.
+     *
+     * @returns {Promise<void>}
+     */
+    async waitForPipButton(): Promise<void> {
+        await this.pipBtn.waitForExist({
+            timeout: 2000, timeoutMsg: 'PiP button not found'
+        });
+    }
+
+    /**
+     * Clicks on the PiP button to toggle PiP mode.
+     *
+     * @returns {Promise<void>}
+     */
+    async clickPipButton(): Promise<void> {
+        await this.participant.log('Clicking on: PiP Button');
+
+        await this.waitForPipButton();
+
+        return this.pipBtn.click();
     }
 
     /**

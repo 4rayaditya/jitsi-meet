@@ -806,6 +806,25 @@ export function createToolbarEvent(buttonName: string, attributes = {}) {
 }
 
 /**
+ * Creates an event associated with Document PiP lifecycle actions.
+ *
+ * @param {string} action - The PiP action (open, close, fallback, error).
+ * @param {Object} attributes - Attributes to attach to the event.
+ * @returns {Object} The event in a format suitable for sending via sendAnalytics.
+ */
+export function createPipEvent(
+        action: 'open' | 'close' | 'fallback' | 'error',
+        attributes = {}) {
+    return {
+        action,
+        actionSubject: 'pip',
+        attributes,
+        source: 'doc-pip',
+        type: TYPE_UI
+    };
+}
+
+/**
  * Creates an event associated with a reaction button being clicked/pressed.
  *
  * @param {string} buttonName - The identifier of the reaction button which was

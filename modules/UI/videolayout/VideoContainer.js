@@ -5,6 +5,7 @@ import Logger from '@jitsi/logger';
 import $ from 'jquery';
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 
 import { browser } from '../../../react/features/base/lib-jitsi-meet';
 import { FILMSTRIP_BREAKPOINT } from '../../../react/features/filmstrip/constants';
@@ -659,7 +660,19 @@ export class VideoContainer extends LargeContainer {
             return;
         }
 
-        ReactDOM.render(
+        const container = document.getElementById('largeVideoBackgroundContainer');
+
+        if (!container) {
+            return;
+        }
+
+        // Create a persistent root for the background container to avoid
+        // recreating roots on every update which may leak resources.
+        if (!container.__largeVideoBackgroundRoot) {
+            container.__largeVideoBackgroundRoot = createRoot(container);
+        }
+
+        container.__largeVideoBackgroundRoot.render(
             <LargeVideoBackground
                 hidden = { this._hideBackground || this._isHidden }
                 mirror = {
@@ -669,8 +682,7 @@ export class VideoContainer extends LargeContainer {
                 }
                 orientationFit = { this._backgroundOrientation }
                 videoElement = { this.video }
-                videoTrack = { this.stream } />,
-            document.getElementById('largeVideoBackgroundContainer')
+                videoTrack = { this.stream } />
         );
     }
 }

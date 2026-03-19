@@ -325,6 +325,9 @@ export interface IConfig {
     displayJids?: boolean;
     doNotFlipLocalVideo?: boolean;
     doNotStoreRoom?: boolean;
+    docPip?: {
+        autoOpenOnTabSwitch?: boolean;
+    };
     dropbox?: {
         appKey: string;
         redirectURI?: string;
@@ -366,7 +369,6 @@ export interface IConfig {
     enableRemb?: boolean;
     enableSaveLogs?: boolean;
     enableTalkWhileMuted?: boolean;
-    enableTcc?: boolean;
     enableWebHIDFeature?: boolean;
     enableWelcomePage?: boolean;
     etherpad_base?: string;
@@ -517,6 +519,7 @@ export interface IConfig {
     peopleSearchQueryTypes?: string[];
     peopleSearchTokenLocation?: string;
     peopleSearchUrl?: string;
+    enableTcc?: boolean;
     pip?: {
         disabled?: boolean;
         showOnPrejoin?: boolean;

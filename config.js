@@ -124,6 +124,13 @@ var config = {
         // showSpotConsentDialog: false,
     },
 
+    // Document Picture-in-Picture (Doc-PiP) settings.
+    //
+    docPip: {
+        // Automatically open PiP when the tab/window is hidden.
+        autoOpenOnTabSwitch: true
+    },
+
     // Disables moderator indicators.
     // disableModeratorIndicator: false,
 

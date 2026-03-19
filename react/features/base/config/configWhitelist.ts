@@ -131,6 +131,7 @@ export default [
     'disableTileView',
     'disableTileEnlargement',
     'disableVirtualBackground',
+    'docPip',
     'displayJids',
     'doNotStoreRoom',
     'doNotFlipLocalVideo',
