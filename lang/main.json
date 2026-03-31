@@ -284,6 +284,16 @@
     "dialOut": {
         "statusMessage": "is now {{status}}"
     },
+    "ptz": {
+        "joystickLabel": "Pan and tilt camera",
+        "zoom": "Zoom",
+        "errorTitle": "Camera control error",
+        "errorApplyConstraints": "Could not apply PTZ constraints",
+        "notSupported": "PTZ not supported on this camera",
+        "badge": "PTZ camera controls available",
+        "openControls": "PTZ camera controls",
+        "hideControls": "Hide PTZ controls"
+    },
     "dialog": {
         "Back": "Back",
         "Cancel": "Cancel",

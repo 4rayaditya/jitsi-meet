@@ -1,3 +1,4 @@
+import '../ptz/reducer';
 import '../base/devices/reducer';
 import '../base/premeeting/reducer';
 import '../custom-panel/reducer';
@@ -22,3 +23,4 @@ import '../web-hid/reducer';
 import '../file-sharing/reducer';
 
 import './reducers.any';
+

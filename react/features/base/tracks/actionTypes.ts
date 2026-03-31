@@ -57,6 +57,16 @@ export const TRACK_CREATE_ERROR = 'TRACK_CREATE_ERROR';
 export const TRACK_MUTE_UNMUTE_FAILED = 'TRACK_MUTE_UNMUTE_FAILED';
 
 /**
+ * The type of redux action dispatched when a track's muted state has changed.
+ *
+ * {
+ *     type: TRACK_MUTE_CHANGED,
+ *     track: Track
+ * }
+ */
+export const TRACK_MUTE_CHANGED = 'TRACK_MUTE_CHANGED';
+
+/**
  * The type of redux action dispatched when a track has triggered no data from source event.
  *
  * {
@@ -96,7 +106,7 @@ export const TRACK_STOPPED = 'TRACK_STOPPED';
  * }
  */
 export const TRACK_UPDATED = 'TRACK_UPDATED';
- 
+
 /**
  * The type of redux action dispatched when a local track starts being created
  * via a WebRTC {@code getUserMedia} call. The action's payload includes an

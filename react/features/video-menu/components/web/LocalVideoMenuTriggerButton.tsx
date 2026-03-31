@@ -26,6 +26,7 @@ import ConnectionStatusButton from './ConnectionStatusButton';
 import DemoteToVisitorButton from './DemoteToVisitorButton';
 import FlipLocalVideoButton from './FlipLocalVideoButton';
 import HideSelfViewVideoButton from './HideSelfViewVideoButton';
+import PTZControlsButton from './PTZControlsButton';
 import TogglePinToStageButton from './TogglePinToStageButton';
 
 /**
@@ -74,6 +75,11 @@ interface IProps {
      * Whether to render the pin to stage button.
      */
     _showPinToStage: boolean;
+
+    /**
+     * Whether to render the PTZ controls button.
+     */
+    _showPTZControls: boolean;
 
     /**
      * Whether or not the button should be visible.
@@ -141,6 +147,7 @@ const LocalVideoMenuTriggerButton = ({
     _showHideSelfViewButton,
     _showLocalVideoFlipButton,
     _showPinToStage,
+    _showPTZControls,
     buttonVisible,
     dispatch,
     hidePopover,
@@ -225,6 +232,14 @@ const LocalVideoMenuTriggerButton = ({
                             participantID = { _localParticipantId } />
                     }
                     {
+                        _showPTZControls && <PTZControlsButton
+                            className = { _overflowDrawer ? classes.flipText : '' }
+                            // eslint-disable-next-line react/jsx-no-bind
+                            notifyClick = { () => notifyClick(BUTTONS.PTZ_CONTROLS) }
+                            notifyMode = { buttonsWithNotifyClick?.get(BUTTONS.PTZ_CONTROLS) }
+                            onClick = { hidePopover } />
+                    }
+                    {
                         isMobileBrowser() && <ConnectionStatusButton
                             // eslint-disable-next-line react/jsx-no-bind
                             notifyClick = { () => notifyClick(BUTTONS.CONN_STATUS) }
@@ -236,7 +251,7 @@ const LocalVideoMenuTriggerButton = ({
         );
 
     return (
-        isMobileBrowser() || _showLocalVideoFlipButton || _showHideSelfViewButton
+        isMobileBrowser() || _showLocalVideoFlipButton || _showHideSelfViewButton || _showPTZControls
             ? <Popover
                 content = { content }
                 headingLabel = { t('dialog.localUserControls') }
@@ -270,6 +285,7 @@ function _mapStateToProps(state: IReduxState, ownProps: Partial<IProps>) {
     const localParticipant = getLocalParticipant(state);
     const { disableLocalVideoFlip, disableSelfDemote, disableSelfViewSettings } = state['features/base/config'];
     const videoTrack = getLocalVideoTrack(state['features/base/tracks']);
+    const showPTZControls = Boolean(state['features/ptz']?.capabilities);
     const { overflowDrawer } = state['features/toolbox'];
     const { showConnectionInfo } = state['features/base/connection'];
     const showHideSelfViewButton = !disableSelfViewSettings && !getHideSelfView(state);
@@ -295,6 +311,7 @@ function _mapStateToProps(state: IReduxState, ownProps: Partial<IProps>) {
         _showDemote: !disableSelfDemote && getParticipantCount(state) > 1,
         _showLocalVideoFlipButton: !disableLocalVideoFlip && videoTrack?.videoType !== 'desktop',
         _showHideSelfViewButton: showHideSelfViewButton,
+        _showPTZControls: showPTZControls,
         _overflowDrawer: overflowDrawer,
         _localParticipantId: localParticipant?.id ?? '',
         _showConnectionInfo: Boolean(showConnectionInfo),

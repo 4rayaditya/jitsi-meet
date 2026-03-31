@@ -1,3 +1,4 @@
+import '../ptz/middleware.web';
 import '../base/app/middleware';
 import '../base/jwt/middleware.web';
 import '../base/config/middleware';
@@ -30,3 +31,4 @@ import '../file-sharing/middleware.web';
 import '../custom-panel/middleware.web';
 
 import './middlewares.any';
+

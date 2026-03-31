@@ -1,6 +1,8 @@
 import { IStore } from '../../app/types';
 import { IStateful } from '../app/types';
 import { isAdvancedAudioSettingsEnabled } from '../config/functions.any';
+import { getFeatureFlag } from '../flags/functions';
+import { CAMERA_PTZ_ENABLED } from '../flags/constants';
 import { isMobileBrowser } from '../environment/utils';
 import JitsiMeetJS, { JitsiTrackErrors, browser } from '../lib-jitsi-meet';
 import { gumPending, setAudioMuted } from '../media/actions';
@@ -15,7 +17,7 @@ import {
 import { IAudioSettings } from '../settings/reducer';
 import { getJitsiMeetGlobalNSConnectionTimes } from '../util/helpers';
 
-import { getCameraFacingMode, getLocalJitsiAudioTrack, getLocalJitsiAudioTrackSettings } from './functions.any';
+import { getCameraFacingMode, getLocalJitsiAudioTrack, getLocalJitsiAudioTrackSettings, getLocalVideoTrack } from './functions.any';
 import loadEffects from './loadEffects';
 import logger from './logger';
 import { ITrackOptions } from './types';
@@ -65,10 +67,24 @@ export function createLocalTracksF(options: ITrackOptions = {}, store?: IStore, 
         resolution
     } = state['features/base/config'];
 
-    const constraints = options.constraints ?? state['features/base/config'].constraints ?? {};
+    const constraints: MediaStreamConstraints = options.constraints ?? state['features/base/config'].constraints ?? {};
 
     if (isAdvancedAudioSettingsEnabled(state) && typeof APP !== 'undefined') {
         constraints.audio = state['features/settings'].audioSettings ?? getLocalJitsiAudioTrackSettings(state);
+    }
+
+    if (getFeatureFlag(state, CAMERA_PTZ_ENABLED, false) && options.devices?.includes('video')) {
+        const videoConstraints: MediaTrackConstraints =
+            typeof constraints.video === 'boolean' ? {} : (constraints.video ?? {});
+        const advanced = Array.isArray(videoConstraints.advanced) ? videoConstraints.advanced : [];
+        const hasPTZ = advanced.some(a => a.pan || a.tilt || a.zoom);
+
+        if (!hasPTZ) {
+            advanced.push({ pan: true, tilt: true, zoom: true });
+        }
+
+        videoConstraints.advanced = advanced;
+        constraints.video = videoConstraints;
     }
 
 
@@ -97,11 +113,11 @@ export function createLocalTracksF(options: ITrackOptions = {}, store?: IStore, 
                     resolution,
                     timeout
                 })
-            .catch((err: Error) => {
-                logger.error('Failed to create local tracks', options.devices, err);
+                .catch((err: Error) => {
+                    logger.error('Failed to create local tracks', options.devices, err);
 
-                return Promise.reject(err);
-            });
+                    return Promise.reject(err);
+                });
         }));
 }
 
@@ -115,7 +131,7 @@ export function createLocalTracksF(options: ITrackOptions = {}, store?: IStore, 
  */
 export function createPrejoinTracks() {
     const errors: any = {};
-    const initialDevices = [ MEDIA_TYPE.AUDIO ];
+    const initialDevices = [MEDIA_TYPE.AUDIO];
     const requestedAudio = true;
     let requestedVideo = false;
     const { startAudioOnly, startWithVideoMuted } = APP.store.getState()['features/base/settings'];
@@ -149,59 +165,59 @@ export function createPrejoinTracks() {
             devices: initialDevices,
             timeout
         }, APP.store)
-        .catch(async (err: Error) => {
-            if (err.name === JitsiTrackErrors.TIMEOUT && !browser.isElectron()) {
-                errors.audioAndVideoError = err;
+            .catch(async (err: Error) => {
+                if (err.name === JitsiTrackErrors.TIMEOUT && !browser.isElectron()) {
+                    errors.audioAndVideoError = err;
 
-                return [];
-            }
-
-            // Retry with separate gUM calls.
-            const gUMPromises: any = [];
-            const tracks: any = [];
-
-            if (requestedAudio) {
-                gUMPromises.push(createLocalTracksF({
-                    devices: [ MEDIA_TYPE.AUDIO ],
-                    timeout
-                }));
-            }
-
-            if (requestedVideo) {
-                gUMPromises.push(createLocalTracksF({
-                    devices: [ MEDIA_TYPE.VIDEO ],
-                    timeout
-                }));
-            }
-
-            const results = await Promise.allSettled(gUMPromises);
-            let errorMsg;
-
-            results.forEach((result, idx) => {
-                if (result.status === 'fulfilled') {
-                    tracks.push(result.value[0]);
-                } else {
-                    errorMsg = result.reason;
-                    const isAudio = idx === 0;
-
-                    logger.error(`${isAudio ? 'Audio' : 'Video'} track creation failed with error ${errorMsg}`);
-                    if (isAudio) {
-                        errors.audioOnlyError = errorMsg;
-                    } else {
-                        errors.videoOnlyError = errorMsg;
-                    }
+                    return [];
                 }
+
+                // Retry with separate gUM calls.
+                const gUMPromises: any = [];
+                const tracks: any = [];
+
+                if (requestedAudio) {
+                    gUMPromises.push(createLocalTracksF({
+                        devices: [MEDIA_TYPE.AUDIO],
+                        timeout
+                    }));
+                }
+
+                if (requestedVideo) {
+                    gUMPromises.push(createLocalTracksF({
+                        devices: [MEDIA_TYPE.VIDEO],
+                        timeout
+                    }));
+                }
+
+                const results = await Promise.allSettled(gUMPromises);
+                let errorMsg;
+
+                results.forEach((result, idx) => {
+                    if (result.status === 'fulfilled') {
+                        tracks.push(result.value[0]);
+                    } else {
+                        errorMsg = result.reason;
+                        const isAudio = idx === 0;
+
+                        logger.error(`${isAudio ? 'Audio' : 'Video'} track creation failed with error ${errorMsg}`);
+                        if (isAudio) {
+                            errors.audioOnlyError = errorMsg;
+                        } else {
+                            errors.videoOnlyError = errorMsg;
+                        }
+                    }
+                });
+
+                if (errors.audioOnlyError && errors.videoOnlyError) {
+                    errors.audioAndVideoError = errorMsg;
+                }
+
+                return tracks;
+            })
+            .finally(() => {
+                dispatch(gumPending(initialDevices, IGUMPendingState.NONE));
             });
-
-            if (errors.audioOnlyError && errors.videoOnlyError) {
-                errors.audioAndVideoError = errorMsg;
-            }
-
-            return tracks;
-        })
-        .finally(() => {
-            dispatch(gumPending(initialDevices, IGUMPendingState.NONE));
-        });
     }
 
     return {
@@ -229,6 +245,26 @@ export function isToggleCameraEnabled(stateful: IStateful) {
  * @param {IAudioSettings} settings - The audio settings to apply.
  * @returns {Promise<void>}
  */
+
+export async function applyPTZConstraints(stateful: IStateful, commandService: { send: (values: any) => Promise<void> }, values: any) {
+    const state = toState(stateful);
+    if (!getFeatureFlag(state, CAMERA_PTZ_ENABLED, false)) return;
+    const localVideoTrack = getLocalVideoTrack(state['features/base/tracks']);
+
+    if (!localVideoTrack?.jitsiTrack) {
+        logger.debug('No local video track available for PTZ constraints');
+        return;
+    }
+
+    try {
+        await commandService.send(values);
+    } catch (e) {
+        logger.error('Failed to apply PTZ constraints', e);
+        const { showWarningNotification } = await import('../../notifications/actions');
+        (stateful as any).dispatch?.(showWarningNotification({ titleKey: 'ptz.errorTitle', descriptionKey: 'ptz.errorApplyConstraints' }));
+        throw e;
+    }
+}
 export async function applyAudioConstraints(stateful: IStateful, settings: IAudioSettings) {
     const state = toState(stateful);
     const track = getLocalJitsiAudioTrack(state);
@@ -251,3 +287,7 @@ export async function applyAudioConstraints(stateful: IStateful, settings: IAudi
         logger.error('Failed to apply audio constraints ', error);
     }
 }
+
+
+
+

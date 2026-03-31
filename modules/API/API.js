@@ -55,10 +55,13 @@ import { updateSettings } from '../../react/features/base/settings/actions';
 import { getDisplayName } from '../../react/features/base/settings/functions.web';
 import { setCameraFacingMode } from '../../react/features/base/tracks/actions.web';
 import { CAMERA_FACING_MODE_MESSAGE } from '../../react/features/base/tracks/constants';
+import { applyPTZConstraints } from '../../react/features/base/tracks/functions.web';
 import {
     getLocalVideoTrack,
     isLocalTrackMuted
 } from '../../react/features/base/tracks/functions';
+import { ptzCommandPending } from '../../react/features/ptz/actions';
+import { ptzCommandService } from '../../react/features/ptz/PTZCommandService';
 import {
     autoAssignToBreakoutRooms,
     closeBreakoutRoom,
@@ -604,6 +607,24 @@ function initCommands() {
             sendAnalytics(createApiEvent('set.video.quality'));
             APP.store.dispatch(setVideoQuality(frameHeight));
         },
+        'set-camera-ptz': async values => {
+            APP.store.dispatch(ptzCommandPending());
+            try {
+                await applyPTZConstraints(APP.store, ptzCommandService, values);
+            } catch (err) {
+                logger.error('Failed to apply PTZ constraints from external API', err);
+            }
+        },
+        'get-camera-ptz-capabilities': () => {
+            const ptzState = APP.store.getState()['features/ptz'];
+
+            APP.API._sendEvent({
+                name: 'camera-ptz-capabilities',
+                capabilities: ptzState?.capabilities ?? null,
+                currentValues: ptzState?.currentValues ?? null,
+                deviceId: ptzState?.deviceId ?? null
+            });
+        },
         'set-audio-only': enable => {
             sendAnalytics(createApiEvent('set.audio.only'));
             APP.store.dispatch(setAudioOnly(enable));
@@ -835,7 +856,7 @@ function initCommands() {
                 return;
             }
 
-            if (![ JitsiRecordingConstants.mode.FILE, JitsiRecordingConstants.mode.STREAM ].includes(mode)) {
+            if (![JitsiRecordingConstants.mode.FILE, JitsiRecordingConstants.mode.STREAM].includes(mode)) {
                 logger.error('Invalid recording mode provided!');
 
                 return;
@@ -900,7 +921,8 @@ function initCommands() {
         },
         'toggle-virtual-background': () => {
             APP.store.dispatch(toggleDialog(SettingsDialog, {
-                defaultTab: SETTINGS_TABS.VIRTUAL_BACKGROUND }));
+                defaultTab: SETTINGS_TABS.VIRTUAL_BACKGROUND
+            }));
         },
         'end-conference': () => {
             APP.store.dispatch(endConference());
@@ -955,191 +977,193 @@ function initCommands() {
         const { name } = request;
 
         switch (name) {
-        case 'capture-largevideo-screenshot' :
-            APP.store.dispatch(captureLargeVideoScreenshot())
-                .then(dataURL => {
-                    let error;
+            case 'capture-largevideo-screenshot':
+                APP.store.dispatch(captureLargeVideoScreenshot())
+                    .then(dataURL => {
+                        let error;
 
-                    if (!dataURL) {
-                        error = new Error('No large video found!');
-                    }
+                        if (!dataURL) {
+                            error = new Error('No large video found!');
+                        }
 
-                    callback({
-                        error,
-                        dataURL
+                        callback({
+                            error,
+                            dataURL
+                        });
                     });
-                });
-            break;
-        case 'capture-camera-picture' : {
-            const { cameraFacingMode, descriptionText, titleText } = request;
+                break;
+            case 'capture-camera-picture': {
+                const { cameraFacingMode, descriptionText, titleText } = request;
 
-            if (!isMobileBrowser()) {
-                logger.error('This feature is only supported on mobile');
+                if (!isMobileBrowser()) {
+                    logger.error('This feature is only supported on mobile');
 
-                return;
+                    return;
+                }
+
+                APP.store.dispatch(openCameraCaptureDialog(callback, {
+                    cameraFacingMode,
+                    descriptionText,
+                    titleText
+                }));
+                break;
             }
+            case 'deployment-info':
+                callback(APP.store.getState()['features/base/config'].deploymentInfo);
+                break;
+            case 'invite': {
+                const { invitees } = request;
 
-            APP.store.dispatch(openCameraCaptureDialog(callback, { cameraFacingMode,
-                descriptionText,
-                titleText }));
-            break;
-        }
-        case 'deployment-info':
-            callback(APP.store.getState()['features/base/config'].deploymentInfo);
-            break;
-        case 'invite': {
-            const { invitees } = request;
+                if (!Array.isArray(invitees) || invitees.length === 0) {
+                    callback({
+                        error: new Error('Unexpected format of invitees')
+                    });
 
-            if (!Array.isArray(invitees) || invitees.length === 0) {
+                    break;
+                }
+
+                // The store should be already available because API.init is called
+                // on appWillMount action.
+                APP.store.dispatch(
+                    invite(invitees, true))
+                    .then(failedInvitees => {
+                        let error;
+                        let result;
+
+                        if (failedInvitees.length) {
+                            error = new Error('One or more invites failed!');
+                        } else {
+                            result = true;
+                        }
+
+                        callback({
+                            error,
+                            result
+                        });
+                    });
+                break;
+            }
+            case 'is-audio-muted':
+                callback(APP.conference.isLocalAudioMuted());
+                break;
+            case 'is-audio-disabled':
+                callback(isAudioMuteButtonDisabled(APP.store.getState()));
+                break;
+            case 'is-moderation-on': {
+                const { mediaType } = request;
+                const type = mediaType || MEDIA_TYPE.AUDIO;
+
+                callback(isEnabledFromState(type, APP.store.getState()));
+                break;
+            }
+            case 'is-participant-force-muted': {
+                const state = APP.store.getState();
+                const { participantId, mediaType } = request;
+                const type = mediaType || MEDIA_TYPE.AUDIO;
+                const participant = getParticipantById(state, participantId);
+
+                callback(isForceMuted(participant, type, state));
+                break;
+            }
+            case 'is-participants-pane-open': {
+                callback(getParticipantsPaneOpen(APP.store.getState()));
+                break;
+            }
+            case 'is-video-muted':
+                callback(APP.conference.isLocalVideoMuted());
+                break;
+            case 'is-audio-available':
+                callback(audioAvailable);
+                break;
+            case 'is-video-available':
+                callback(videoAvailable);
+                break;
+            case 'is-sharing-screen':
+                callback(Boolean(APP.conference.isSharingScreen));
+                break;
+            case 'is-start-silent':
+                callback(Boolean(APP.store.getState()['features/base/config'].startSilent));
+                break;
+            case 'get-content-sharing-participants': {
+                const sharingParticipantIds = getScreenshareParticipantIds(APP.store.getState());
+
                 callback({
-                    error: new Error('Unexpected format of invitees')
+                    sharingParticipantIds
                 });
+                break;
+            }
+            case 'get-livestream-url': {
+                const state = APP.store.getState();
+                const conference = getCurrentConference(state);
+                let livestreamUrl;
+
+                if (conference) {
+                    const activeSession = getActiveSession(state, JitsiRecordingConstants.mode.STREAM);
+
+                    livestreamUrl = activeSession?.liveStreamViewURL;
+                } else {
+                    logger.error('Conference is not defined');
+                }
+                callback({
+                    livestreamUrl
+                });
+                break;
+            }
+            case 'get-custom-avatar-backgrounds': {
+                callback({
+                    avatarBackgrounds: APP.store.getState()['features/dynamic-branding'].avatarBackgrounds
+                });
+                break;
+            }
+            case 'list-breakout-rooms': {
+                callback(getBreakoutRooms(APP.store.getState()));
+                break;
+            }
+            case 'rooms-info': {
+                callback(getRoomsInfo(APP.store.getState()));
+                break;
+            }
+            case 'get-shared-document-url': {
+                const { etherpad } = APP.store.getState()['features/etherpad'];
+
+                callback(etherpad?.documentUrl || '');
+                break;
+            }
+            case 'get-p2p-status': {
+                callback(isP2pActive(APP.store.getState()));
+                break;
+            }
+            case 'session-id': {
+                const { conference } = APP.store.getState()['features/base/conference'];
+
+                callback(conference?.getMeetingUniqueId() || '');
+                break;
+            }
+            case '_new_electron_screensharing_supported': {
+                callback(true);
 
                 break;
             }
-
-            // The store should be already available because API.init is called
-            // on appWillMount action.
-            APP.store.dispatch(
-                invite(invitees, true))
-                .then(failedInvitees => {
-                    let error;
-                    let result;
-
-                    if (failedInvitees.length) {
-                        error = new Error('One or more invites failed!');
-                    } else {
-                        result = true;
-                    }
-
+            case 'open-desktop-picker': {
+                const { desktopSharingSources } = APP.store.getState()['features/base/config'];
+                const options = {
+                    desktopSharingSources: desktopSharingSources ?? ['screen', 'window']
+                };
+                const onSourceChoose = (_streamId, _type, screenShareAudio, source) => {
                     callback({
-                        error,
-                        result
+                        screenShareAudio,
+                        source
                     });
-                });
-            break;
-        }
-        case 'is-audio-muted':
-            callback(APP.conference.isLocalAudioMuted());
-            break;
-        case 'is-audio-disabled':
-            callback(isAudioMuteButtonDisabled(APP.store.getState()));
-            break;
-        case 'is-moderation-on': {
-            const { mediaType } = request;
-            const type = mediaType || MEDIA_TYPE.AUDIO;
+                };
 
-            callback(isEnabledFromState(type, APP.store.getState()));
-            break;
-        }
-        case 'is-participant-force-muted': {
-            const state = APP.store.getState();
-            const { participantId, mediaType } = request;
-            const type = mediaType || MEDIA_TYPE.AUDIO;
-            const participant = getParticipantById(state, participantId);
+                dispatch(showDesktopPicker(options, onSourceChoose));
 
-            callback(isForceMuted(participant, type, state));
-            break;
-        }
-        case 'is-participants-pane-open': {
-            callback(getParticipantsPaneOpen(APP.store.getState()));
-            break;
-        }
-        case 'is-video-muted':
-            callback(APP.conference.isLocalVideoMuted());
-            break;
-        case 'is-audio-available':
-            callback(audioAvailable);
-            break;
-        case 'is-video-available':
-            callback(videoAvailable);
-            break;
-        case 'is-sharing-screen':
-            callback(Boolean(APP.conference.isSharingScreen));
-            break;
-        case 'is-start-silent':
-            callback(Boolean(APP.store.getState()['features/base/config'].startSilent));
-            break;
-        case 'get-content-sharing-participants': {
-            const sharingParticipantIds = getScreenshareParticipantIds(APP.store.getState());
-
-            callback({
-                sharingParticipantIds
-            });
-            break;
-        }
-        case 'get-livestream-url': {
-            const state = APP.store.getState();
-            const conference = getCurrentConference(state);
-            let livestreamUrl;
-
-            if (conference) {
-                const activeSession = getActiveSession(state, JitsiRecordingConstants.mode.STREAM);
-
-                livestreamUrl = activeSession?.liveStreamViewURL;
-            } else {
-                logger.error('Conference is not defined');
+                break;
             }
-            callback({
-                livestreamUrl
-            });
-            break;
-        }
-        case 'get-custom-avatar-backgrounds' : {
-            callback({
-                avatarBackgrounds: APP.store.getState()['features/dynamic-branding'].avatarBackgrounds
-            });
-            break;
-        }
-        case 'list-breakout-rooms': {
-            callback(getBreakoutRooms(APP.store.getState()));
-            break;
-        }
-        case 'rooms-info': {
-            callback(getRoomsInfo(APP.store.getState()));
-            break;
-        }
-        case 'get-shared-document-url': {
-            const { etherpad } = APP.store.getState()['features/etherpad'];
+            default:
+                callback({ error: new Error('UnknownRequestError') });
 
-            callback(etherpad?.documentUrl || '');
-            break;
-        }
-        case 'get-p2p-status': {
-            callback(isP2pActive(APP.store.getState()));
-            break;
-        }
-        case 'session-id': {
-            const { conference } = APP.store.getState()['features/base/conference'];
-
-            callback(conference?.getMeetingUniqueId() || '');
-            break;
-        }
-        case '_new_electron_screensharing_supported': {
-            callback(true);
-
-            break;
-        }
-        case 'open-desktop-picker': {
-            const { desktopSharingSources } = APP.store.getState()['features/base/config'];
-            const options = {
-                desktopSharingSources: desktopSharingSources ?? [ 'screen', 'window' ]
-            };
-            const onSourceChoose = (_streamId, _type, screenShareAudio, source) => {
-                callback({
-                    screenShareAudio,
-                    source
-                });
-            };
-
-            dispatch(showDesktopPicker(options, onSourceChoose));
-
-            break;
-        }
-        default:
-            callback({ error: new Error('UnknownRequestError') });
-
-            return false;
+                return false;
         }
 
         return true;
@@ -1155,12 +1179,12 @@ function shouldBeEnabled() {
     return (
         typeof API_ID === 'number'
 
-            // XXX Enable the API when a JSON Web Token (JWT) is specified in
-            // the location/URL because then it is very likely that the Jitsi
-            // Meet (Web) app is being used by an external/wrapping (Web) app
-            // and, consequently, the latter will need to communicate with the
-            // former. (The described logic is merely a heuristic though.)
-            || parseJWTFromURLParams());
+        // XXX Enable the API when a JSON Web Token (JWT) is specified in
+        // the location/URL because then it is very likely that the Jitsi
+        // Meet (Web) app is being used by an external/wrapping (Web) app
+        // and, consequently, the latter will need to communicate with the
+        // former. (The described logic is merely a heuristic though.)
+        || parseJWTFromURLParams());
 }
 
 /**
@@ -1493,7 +1517,7 @@ class API {
      * @returns {void}
      */
     notifyReceivedChatMessage(
-            { body, from, nick, privateMessage, ts } = {}) {
+        { body, from, nick, privateMessage, ts } = {}) {
         if (APP.conference.isLocalId(from)) {
             return;
         }
@@ -1652,8 +1676,8 @@ class API {
      * @returns {void}
      */
     notifyDisplayNameChanged(
-            id,
-            { displayName, formattedDisplayName }) {
+        id,
+        { displayName, formattedDisplayName }) {
         this._sendEvent({
             name: 'display-name-change',
             displayname: displayName,
@@ -1671,8 +1695,8 @@ class API {
      * @returns {void}
      */
     notifyEmailChanged(
-            id,
-            { email }) {
+        id,
+        { email }) {
         this._sendEvent({
             name: 'email-change',
             email,
@@ -2470,3 +2494,4 @@ class API {
 }
 
 export default new API();
+

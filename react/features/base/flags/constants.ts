@@ -1,3 +1,5 @@
+export const CAMERA_PTZ_ENABLED = 'camera-ptz.enabled';
+
 /**
  * Flag indicating if add-people functionality should be enabled.
  * Default: enabled (true).
@@ -284,3 +286,4 @@ export const VIDEO_SHARE_BUTTON_ENABLED = 'video-share.enabled';
  * Default: disabled (false).
  */
 export const WELCOME_PAGE_ENABLED = 'welcomepage.enabled';
+

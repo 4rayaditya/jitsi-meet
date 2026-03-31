@@ -72,6 +72,8 @@ const commands = {
     setSubtitles: 'set-subtitles',
     setTileView: 'set-tile-view',
     setVideoQuality: 'set-video-quality',
+    setCameraPTZ: 'set-camera-ptz',
+    getCameraPTZCapabilities: 'get-camera-ptz-capabilities',
     setVirtualBackground: 'set-virtual-background',
     showNotification: 'show-notification',
     startRecording: 'start-recording',
@@ -117,6 +119,7 @@ const events = {
     'breakout-rooms-updated': 'breakoutRoomsUpdated',
     'browser-support': 'browserSupport',
     'camera-error': 'cameraError',
+    'camera-ptz-capabilities': 'cameraPTZCapabilities',
     'chat-updated': 'chatUpdated',
     'compute-pressure-changed': 'computePressureChanged',
     'conference-created-timestamp': 'conferenceCreatedTimestamp',
@@ -443,9 +446,9 @@ export default class JitsiMeetExternalAPI extends EventEmitter {
         const iframe = this.getIFrame();
 
         if (!this._isLargeVideoVisible
-                || !iframe
-                || !iframe.contentWindow
-                || !iframe.contentWindow.document) {
+            || !iframe
+            || !iframe.contentWindow
+            || !iframe.contentWindow.document) {
             return;
         }
 
@@ -461,9 +464,9 @@ export default class JitsiMeetExternalAPI extends EventEmitter {
         const iframe = this.getIFrame();
 
         if (!this._isPrejoinVideoVisible
-                || !iframe
-                || !iframe.contentWindow
-                || !iframe.contentWindow.document) {
+            || !iframe
+            || !iframe.contentWindow
+            || !iframe.contentWindow.document) {
             return;
         }
 
@@ -482,8 +485,8 @@ export default class JitsiMeetExternalAPI extends EventEmitter {
         const iframe = this.getIFrame();
 
         if (!iframe
-                || !iframe.contentWindow
-                || !iframe.contentWindow.document) {
+            || !iframe.contentWindow
+            || !iframe.contentWindow.document) {
             return;
         }
 
@@ -530,112 +533,112 @@ export default class JitsiMeetExternalAPI extends EventEmitter {
             const userID = data.id;
 
             switch (name) {
-            case 'ready': {
-                // Fake the iframe onload event because it's not reliable.
-                this._onload?.();
+                case 'ready': {
+                    // Fake the iframe onload event because it's not reliable.
+                    this._onload?.();
 
-                break;
-            }
-            case 'video-conference-joined': {
-                if (typeof this._tmpE2EEKey !== 'undefined') {
+                    break;
+                }
+                case 'video-conference-joined': {
+                    if (typeof this._tmpE2EEKey !== 'undefined') {
 
-                    const hexToBytes = hex => {
-                        const bytes = [];
+                        const hexToBytes = hex => {
+                            const bytes = [];
 
-                        for (let c = 0; c < hex.length; c += 2) {
-                            bytes.push(parseInt(hex.substring(c, c + 2), 16));
-                        }
+                            for (let c = 0; c < hex.length; c += 2) {
+                                bytes.push(parseInt(hex.substring(c, c + 2), 16));
+                            }
 
-                        return bytes;
+                            return bytes;
+                        };
+
+                        this.executeCommand('setMediaEncryptionKey', JSON.stringify({
+                            exportedKey: hexToBytes(this._tmpE2EEKey),
+                            index: 0
+                        }));
+
+                        this._tmpE2EEKey = undefined;
+                    }
+
+                    this._myUserID = userID;
+                    this._participants[userID] = {
+                        email: data.email,
+                        avatarURL: data.avatarURL
                     };
-
-                    this.executeCommand('setMediaEncryptionKey', JSON.stringify({
-                        exportedKey: hexToBytes(this._tmpE2EEKey),
-                        index: 0
-                    }));
-
-                    this._tmpE2EEKey = undefined;
+                    this._iAmvisitor = data.visitor;
                 }
 
-                this._myUserID = userID;
-                this._participants[userID] = {
-                    email: data.email,
-                    avatarURL: data.avatarURL
-                };
-                this._iAmvisitor = data.visitor;
-            }
-
-            // eslint-disable-next-line no-fallthrough
-            case 'participant-joined': {
-                this._participants[userID] = this._participants[userID] || {};
-                this._participants[userID].displayName = data.displayName;
-                this._participants[userID].formattedDisplayName
-                    = data.formattedDisplayName;
-                changeParticipantNumber(this, 1);
-                break;
-            }
-            case 'participant-left':
-                changeParticipantNumber(this, -1);
-                delete this._participants[userID];
-                break;
-            case 'display-name-change': {
-                const user = this._participants[userID];
-
-                if (user) {
-                    user.displayName = data.displayname;
-                    user.formattedDisplayName = data.formattedDisplayName;
+                // eslint-disable-next-line no-fallthrough
+                case 'participant-joined': {
+                    this._participants[userID] = this._participants[userID] || {};
+                    this._participants[userID].displayName = data.displayName;
+                    this._participants[userID].formattedDisplayName
+                        = data.formattedDisplayName;
+                    changeParticipantNumber(this, 1);
+                    break;
                 }
-                break;
-            }
-            case 'email-change': {
-                const user = this._participants[userID];
+                case 'participant-left':
+                    changeParticipantNumber(this, -1);
+                    delete this._participants[userID];
+                    break;
+                case 'display-name-change': {
+                    const user = this._participants[userID];
 
-                if (user) {
-                    user.email = data.email;
+                    if (user) {
+                        user.displayName = data.displayname;
+                        user.formattedDisplayName = data.formattedDisplayName;
+                    }
+                    break;
                 }
-                break;
-            }
-            case 'avatar-changed': {
-                const user = this._participants[userID];
+                case 'email-change': {
+                    const user = this._participants[userID];
 
-                if (user) {
-                    user.avatarURL = data.avatarURL;
+                    if (user) {
+                        user.email = data.email;
+                    }
+                    break;
                 }
-                break;
-            }
-            case 'on-stage-participant-changed':
-                this._onStageParticipant = userID;
-                this.emit('largeVideoChanged');
-                break;
-            case 'large-video-visibility-changed':
-                this._isLargeVideoVisible = data.isVisible;
-                this.emit('largeVideoChanged');
-                break;
-            case 'prejoin-screen-loaded':
-                this._participants[userID] = {
-                    displayName: data.displayName,
-                    formattedDisplayName: data.formattedDisplayName
-                };
-                break;
-            case 'on-prejoin-video-changed':
-                this._isPrejoinVideoVisible = data.isVisible;
-                this.emit('prejoinVideoChanged');
-                break;
-            case 'video-conference-left':
-                changeParticipantNumber(this, -1);
-                delete this._participants[this._myUserID];
-                break;
-            case 'video-quality-changed':
-                this._videoQuality = data.videoQuality;
-                break;
-            case 'breakout-rooms-updated':
-                this.updateNumberOfParticipants(data.rooms);
-                break;
-            case 'local-storage-changed':
-                jitsiLocalStorage.setItem('jitsiLocalStorage', data.localStorageContent);
+                case 'avatar-changed': {
+                    const user = this._participants[userID];
 
-                // Since this is internal event we don't need to emit it to the consumer of the API.
-                return true;
+                    if (user) {
+                        user.avatarURL = data.avatarURL;
+                    }
+                    break;
+                }
+                case 'on-stage-participant-changed':
+                    this._onStageParticipant = userID;
+                    this.emit('largeVideoChanged');
+                    break;
+                case 'large-video-visibility-changed':
+                    this._isLargeVideoVisible = data.isVisible;
+                    this.emit('largeVideoChanged');
+                    break;
+                case 'prejoin-screen-loaded':
+                    this._participants[userID] = {
+                        displayName: data.displayName,
+                        formattedDisplayName: data.formattedDisplayName
+                    };
+                    break;
+                case 'on-prejoin-video-changed':
+                    this._isPrejoinVideoVisible = data.isVisible;
+                    this.emit('prejoinVideoChanged');
+                    break;
+                case 'video-conference-left':
+                    changeParticipantNumber(this, -1);
+                    delete this._participants[this._myUserID];
+                    break;
+                case 'video-quality-changed':
+                    this._videoQuality = data.videoQuality;
+                    break;
+                case 'breakout-rooms-updated':
+                    this.updateNumberOfParticipants(data.rooms);
+                    break;
+                case 'local-storage-changed':
+                    jitsiLocalStorage.setItem('jitsiLocalStorage', data.localStorageContent);
+
+                    // Since this is internal event we don't need to emit it to the consumer of the API.
+                    return true;
             }
 
             const eventName = events[name];
@@ -891,9 +894,9 @@ export default class JitsiMeetExternalAPI extends EventEmitter {
      * @returns {Promise<string>} - Resolves with a base64 encoded image data of the screenshot.
      */
     captureCameraPicture(
-            cameraFacingMode,
-            descriptionText,
-            titleText
+        cameraFacingMode,
+        descriptionText,
+        titleText
     ) {
         return this._transport.sendRequest({
             name: 'capture-camera-picture',
@@ -1118,7 +1121,7 @@ export default class JitsiMeetExternalAPI extends EventEmitter {
      */
     isDeviceListAvailable() {
         console.warn('isDeviceListAvailable is deprecated and will be removed in the future. '
-                     + 'It always returns true');
+            + 'It always returns true');
 
         return Promise.resolve(true);
     }
@@ -1459,7 +1462,7 @@ export default class JitsiMeetExternalAPI extends EventEmitter {
      */
     sendProxyConnectionEvent(event) {
         this._transport.sendEvent({
-            data: [ event ],
+            data: [event],
             name: 'proxy-connection-event'
         });
     }
@@ -1577,11 +1580,13 @@ export default class JitsiMeetExternalAPI extends EventEmitter {
 
             this.executeCommand('setMediaEncryptionKey', JSON.stringify({
                 exportedKey: Array.from(new Uint8Array(exportedKey)),
-                index }));
+                index
+            }));
         } else {
             this.executeCommand('setMediaEncryptionKey', JSON.stringify({
                 exportedKey: false,
-                index }));
+                index
+            }));
         }
     }
 
@@ -1625,3 +1630,4 @@ export default class JitsiMeetExternalAPI extends EventEmitter {
         });
     }
 }
+

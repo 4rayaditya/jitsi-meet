@@ -60,6 +60,9 @@ import {
 } from '../../functions';
 
 import ThumbnailAudioIndicator from './ThumbnailAudioIndicator';
+import PTZControlPanel from '../../../ptz/components/PTZControlPanel.web';
+import { PTZCapabilityBadge } from '../../../ptz/components/PTZCapabilityBadge.web';
+import { ptzCommandService } from '../../../ptz/PTZCommandService';
 import ThumbnailBottomIndicators from './ThumbnailBottomIndicators';
 import ThumbnailTopIndicators from './ThumbnailTopIndicators';
 import VirtualScreenshareParticipant from './VirtualScreenshareParticipant';
@@ -881,26 +884,26 @@ class Thumbnail extends Component<IProps, IState> {
 
         return (
             <span
-                aria-label = { this.props.t(pinned ? 'unpinParticipant' : 'pinParticipant', {
+                aria-label={this.props.t(pinned ? 'unpinParticipant' : 'pinParticipant', {
                     participantName: name
-                }) }
-                className = { containerClassName }
-                id = 'sharedVideoContainer'
-                onClick = { this._onClick }
-                onKeyDown = { this._onTogglePinButtonKeyDown }
-                { ...(_isMobile ? {} : {
+                })}
+                className={containerClassName}
+                id='sharedVideoContainer'
+                onClick={this._onClick}
+                onKeyDown={this._onTogglePinButtonKeyDown}
+                {...(_isMobile ? {} : {
                     onMouseEnter: this._onMouseEnter,
                     onMouseMove: this._onMouseMove,
                     onMouseLeave: this._onMouseLeave
-                }) }
-                role = 'button'
-                style = { styles.thumbnail }
-                tabIndex = { 0 }>
+                })}
+                role='button'
+                style={styles.thumbnail}
+                tabIndex={0}>
                 {avatarURL ? (
                     <img
-                        alt = ''
-                        className = 'sharedVideoAvatar'
-                        src = { avatarURL } />
+                        alt=''
+                        className='sharedVideoAvatar'
+                        src={avatarURL} />
                 )
                     : this._renderAvatar(styles.avatar)}
             </span>
@@ -919,12 +922,12 @@ class Thumbnail extends Component<IProps, IState> {
 
         return (
             <div
-                className = 'avatar-container'
-                style = { styles }>
+                className='avatar-container'
+                style={styles}>
                 <Avatar
-                    className = 'userAvatar'
-                    participantId = { id }
-                    size = { this._getAvatarSize() } />
+                    className='userAvatar'
+                    participantId={id}
+                    size={this._getAvatarSize()} />
             </div>
         );
     }
@@ -993,10 +996,10 @@ class Thumbnail extends Component<IProps, IState> {
         const classes = withStyles.getClasses(this.props);
 
         return _gifSrc && (
-            <div className = { classes.gif }>
+            <div className={classes.gif}>
                 <img
-                    alt = 'GIF'
-                    src = { _gifSrc } />
+                    alt='GIF'
+                    src={_gifSrc} />
             </div>
         );
     }
@@ -1055,23 +1058,23 @@ class Thumbnail extends Component<IProps, IState> {
         }
 
         const video = _videoTrack && <VideoTrack
-            className = { local ? videoTrackClassName : '' }
-            eventHandlers = { videoEventListeners }
-            id = { local ? 'localVideo_container' : `remoteVideo_${videoTrackId || ''}` }
-            muted = { local ? undefined : true }
-            style = { styles.video }
-            videoTrack = { _videoTrack } />;
+            className={local ? videoTrackClassName : ''}
+            eventHandlers={videoEventListeners}
+            id={local ? 'localVideo_container' : `remoteVideo_${videoTrackId || ''}`}
+            muted={local ? undefined : true}
+            style={styles.video}
+            videoTrack={_videoTrack} />;
 
         return (
             <span
-                className = { containerClassName }
-                id = { local
+                className={containerClassName}
+                id={local
                     ? `localVideoContainer${filmstripType === FILMSTRIP_TYPE.MAIN ? '' : `_${filmstripType}`}`
                     : `participant_${id}${filmstripType === FILMSTRIP_TYPE.MAIN ? '' : `_${filmstripType}`}`
                 }
-                onBlur = { this._onBlur }
-                onFocus = { this._onFocus }
-                { ...(_isMobile
+                onBlur={this._onBlur}
+                onFocus={this._onFocus}
+                {...(_isMobile
                     ? {
                         onTouchEnd: this._onTouchEnd,
                         onTouchMove: this._onTouchMove,
@@ -1083,78 +1086,80 @@ class Thumbnail extends Component<IProps, IState> {
                         onMouseMove: this._onMouseMove,
                         onMouseLeave: this._onMouseLeave
                     }
-                ) }
-                ref = { this.containerRef }
-                style = { styles.thumbnail }>
+                )}
+                ref={this.containerRef}
+                style={styles.thumbnail}>
                 {/* this "button" is invisible, only here so that
                 keyboard/screen reader users can pin/unpin */}
                 <Tooltip
-                    content = { pinButtonLabel }>
+                    content={pinButtonLabel}>
                     <span
-                        aria-label = { pinButtonLabel }
-                        className = { classes.keyboardPinButton }
-                        onKeyDown = { this._onTogglePinButtonKeyDown }
-                        role = 'button'
-                        tabIndex = { 0 } />
+                        aria-label={pinButtonLabel}
+                        className={classes.keyboardPinButton}
+                        onKeyDown={this._onTogglePinButtonKeyDown}
+                        role='button'
+                        tabIndex={0} />
                 </Tooltip>
                 {!_gifSrc && (local
-                    ? <span id = 'localVideoWrapper'>{video}</span>
+                    ? <span id='localVideoWrapper'>{video}</span>
                     : video)}
-                <div className = { classes.containerBackground } />
+                <div className={classes.containerBackground} />
                 {/* put the bottom container before the top container in the dom,
                 because it contains the participant name that should be announced first by screen readers */}
                 <div
-                    className = { clsx(classes.indicatorsContainer,
+                    className={clsx(classes.indicatorsContainer,
                         classes.indicatorsBottomContainer,
                         _thumbnailType === THUMBNAIL_TYPE.TILE && 'tile-view-mode'
-                    ) }>
+                    )}>
                     <ThumbnailBottomIndicators
-                        className = { classes.indicatorsBackground }
-                        local = { local }
-                        participantId = { id }
-                        showStatusIndicators = { !isWhiteboardParticipant(_participant) }
-                        thumbnailType = { _thumbnailType } />
+                        className={classes.indicatorsBackground}
+                        local={local}
+                        participantId={id}
+                        showStatusIndicators={!isWhiteboardParticipant(_participant)}
+                        thumbnailType={_thumbnailType} />
+                    {local && <PTZCapabilityBadge />}
                 </div>
+                {local && <PTZControlPanel commandService={ptzCommandService} />}
                 <div
-                    className = { clsx(classes.indicatorsContainer,
+                    className={clsx(classes.indicatorsContainer,
                         classes.indicatorsTopContainer,
                         _thumbnailType === THUMBNAIL_TYPE.TILE && 'tile-view-mode'
-                    ) }>
+                    )}>
                     <ThumbnailTopIndicators
-                        disableConnectionIndicator = { isWhiteboardParticipant(_participant) }
-                        hidePopover = { this._hidePopover }
-                        indicatorsClassName = { classes.indicatorsBackground }
-                        isHovered = { isHovered }
-                        local = { local }
-                        participantId = { id }
-                        popoverVisible = { popoverVisible }
-                        showPopover = { this._showPopover }
-                        thumbnailType = { _thumbnailType } />
+                        disableConnectionIndicator={isWhiteboardParticipant(_participant)}
+                        hidePopover={this._hidePopover}
+                        indicatorsClassName={classes.indicatorsBackground}
+                        isHovered={isHovered}
+                        local={local}
+                        participantId={id}
+                        popoverVisible={popoverVisible}
+                        showPopover={this._showPopover}
+                        thumbnailType={_thumbnailType} />
                 </div>
-                {_shouldDisplayTintBackground && <div className = { classes.tintBackground } />}
-                {!_gifSrc && this._renderAvatar(styles.avatar) }
-                { !local && (
-                    <div className = 'presence-label-container'>
+                {_shouldDisplayTintBackground && <div className={classes.tintBackground} />}
+                {!_gifSrc && this._renderAvatar(styles.avatar)}
+                {!local && (
+                    <div className='presence-label-container'>
                         <PresenceLabel
-                            className = 'presence-label'
-                            participantID = { id } />
+                            className='presence-label'
+                            participantID={id} />
                     </div>
                 )}
-                <ThumbnailAudioIndicator _audioTrack = { _audioTrack } />
+                <ThumbnailAudioIndicator _audioTrack={_audioTrack} />
                 {this._renderGif()}
                 <div
-                    className = { clsx(classes.borderIndicator,
-                    _gifSrc && classes.borderIndicatorOnTop,
-                    'raised-hand-border') } />
+                    className={clsx(classes.borderIndicator,
+                        _gifSrc && classes.borderIndicatorOnTop,
+                        'raised-hand-border')} />
                 <div
-                    className = { clsx(classes.borderIndicator,
-                    _gifSrc && classes.borderIndicatorOnTop,
-                    'active-speaker-indicator') } />
+                    className={clsx(classes.borderIndicator,
+                        _gifSrc && classes.borderIndicatorOnTop,
+                        'active-speaker-indicator')} />
                 {_gifSrc && (
                     <div
-                        className = { clsx(classes.borderIndicator, classes.borderIndicatorOnTop) }
-                        onMouseEnter = { this._onGifMouseEnter }
-                        onMouseLeave = { this._onGifMouseLeave } />
+                        className={clsx(classes.borderIndicator, classes.borderIndicatorOnTop)}
+                        onMouseEnter={this._onGifMouseEnter}
+                        onMouseLeave={this._onGifMouseLeave} />
                 )}
             </span>
         );
@@ -1197,23 +1202,23 @@ class Thumbnail extends Component<IProps, IState> {
 
             return (
                 <VirtualScreenshareParticipant
-                    classes = { classes }
-                    containerClassName = { this._getContainerClassName() }
-                    isHovered = { isHovered }
-                    isLocal = { isLocalScreenshareParticipant(_participant) }
-                    isMobile = { _isMobile }
-                    onClick = { this._onClick }
-                    onMouseEnter = { this._onMouseEnter }
-                    onMouseLeave = { this._onMouseLeave }
-                    onMouseMove = { this._onMouseMove }
-                    onTouchEnd = { this._onTouchEnd }
-                    onTouchMove = { this._onTouchMove }
-                    onTouchStart = { this._onTouchStart }
-                    participantId = { _participant.id }
-                    shouldDisplayTintBackground = { _shouldDisplayTintBackground }
-                    styles = { this._getStyles() }
-                    thumbnailType = { _thumbnailType }
-                    videoTrack = { _videoTrack } />
+                    classes={classes}
+                    containerClassName={this._getContainerClassName()}
+                    isHovered={isHovered}
+                    isLocal={isLocalScreenshareParticipant(_participant)}
+                    isMobile={_isMobile}
+                    onClick={this._onClick}
+                    onMouseEnter={this._onMouseEnter}
+                    onMouseLeave={this._onMouseLeave}
+                    onMouseMove={this._onMouseMove}
+                    onTouchEnd={this._onTouchEnd}
+                    onTouchMove={this._onTouchMove}
+                    onTouchStart={this._onTouchStart}
+                    participantId={_participant.id}
+                    shouldDisplayTintBackground={_shouldDisplayTintBackground}
+                    styles={this._getStyles()}
+                    thumbnailType={_thumbnailType}
+                    videoTrack={_videoTrack} />
             );
         }
 
@@ -1256,94 +1261,105 @@ function _mapStateToProps(state: IReduxState, ownProps: any): Object {
     const tileType = getThumbnailTypeFromLayout(_currentLayout, filmstripType);
 
     switch (tileType) {
-    case THUMBNAIL_TYPE.VERTICAL:
-    case THUMBNAIL_TYPE.HORIZONTAL: {
-        const {
-            horizontalViewDimensions = {
-                local: { width: undefined,
-                    height: undefined },
-                remote: { width: undefined,
-                    height: undefined }
-            },
-            verticalViewDimensions = {
-                local: { width: undefined,
-                    height: undefined },
-                remote: { width: undefined,
-                    height: undefined },
-                gridView: {}
-            }
-        } = state['features/filmstrip'];
-        const _verticalViewGrid = showGridInVerticalView(state);
-        const { local, remote }
-            = tileType === THUMBNAIL_TYPE.VERTICAL
-                ? verticalViewDimensions : horizontalViewDimensions;
-
-        const { width, height } = (isLocal ? local : remote) ?? { width: undefined,
-            height: undefined };
-
-        size = {
-            _width: width,
-            _height: height
-        };
-
-        if (_verticalViewGrid) {
-            // @ts-ignore
-            const { width: _width, height: _height } = verticalViewDimensions.gridView.thumbnailSize;
-
-            size = {
-                _width,
-                _height
-            };
-        }
-
-        _isMobilePortrait = _isMobile && state['features/base/responsive-ui'].aspectRatio === ASPECT_RATIO_NARROW;
-
-        break;
-    }
-    case THUMBNAIL_TYPE.TILE: {
-        const { thumbnailSize } = state['features/filmstrip'].tileViewDimensions ?? { thumbnailSize: undefined };
-        const {
-            stageFilmstripDimensions = {
-                thumbnailSize: {
-                    height: undefined,
-                    width: undefined
+        case THUMBNAIL_TYPE.VERTICAL:
+        case THUMBNAIL_TYPE.HORIZONTAL: {
+            const {
+                horizontalViewDimensions = {
+                    local: {
+                        width: undefined,
+                        height: undefined
+                    },
+                    remote: {
+                        width: undefined,
+                        height: undefined
+                    }
+                },
+                verticalViewDimensions = {
+                    local: {
+                        width: undefined,
+                        height: undefined
+                    },
+                    remote: {
+                        width: undefined,
+                        height: undefined
+                    },
+                    gridView: {}
                 }
-            },
-            screenshareFilmstripDimensions = {
-                thumbnailSize: {
-                    height: undefined,
-                    width: undefined
-                }
-            }
-        } = state['features/filmstrip'];
+            } = state['features/filmstrip'];
+            const _verticalViewGrid = showGridInVerticalView(state);
+            const { local, remote }
+                = tileType === THUMBNAIL_TYPE.VERTICAL
+                    ? verticalViewDimensions : horizontalViewDimensions;
 
-        size = {
-            _width: thumbnailSize?.width,
-            _height: thumbnailSize?.height
-        };
-
-        if (filmstripType === FILMSTRIP_TYPE.STAGE) {
-            const { width: _width, height: _height } = stageFilmstripDimensions.thumbnailSize ?? {
-                width: undefined,
-                height: undefined };
-
-            size = {
-                _width,
-                _height
-            };
-        } else if (filmstripType === FILMSTRIP_TYPE.SCREENSHARE) {
-            const { width: _width, height: _height } = screenshareFilmstripDimensions.thumbnailSize ?? {
+            const { width, height } = (isLocal ? local : remote) ?? {
                 width: undefined,
                 height: undefined
             };
 
             size = {
-                _width,
-                _height
+                _width: width,
+                _height: height
             };
+
+            if (_verticalViewGrid) {
+                // @ts-ignore
+                const { width: _width, height: _height } = verticalViewDimensions.gridView.thumbnailSize;
+
+                size = {
+                    _width,
+                    _height
+                };
+            }
+
+            _isMobilePortrait = _isMobile && state['features/base/responsive-ui'].aspectRatio === ASPECT_RATIO_NARROW;
+
+            break;
         }
-        break;
-    }
+        case THUMBNAIL_TYPE.TILE: {
+            const { thumbnailSize } = state['features/filmstrip'].tileViewDimensions ?? { thumbnailSize: undefined };
+            const {
+                stageFilmstripDimensions = {
+                    thumbnailSize: {
+                        height: undefined,
+                        width: undefined
+                    }
+                },
+                screenshareFilmstripDimensions = {
+                    thumbnailSize: {
+                        height: undefined,
+                        width: undefined
+                    }
+                }
+            } = state['features/filmstrip'];
+
+            size = {
+                _width: thumbnailSize?.width,
+                _height: thumbnailSize?.height
+            };
+
+            if (filmstripType === FILMSTRIP_TYPE.STAGE) {
+                const { width: _width, height: _height } = stageFilmstripDimensions.thumbnailSize ?? {
+                    width: undefined,
+                    height: undefined
+                };
+
+                size = {
+                    _width,
+                    _height
+                };
+            } else if (filmstripType === FILMSTRIP_TYPE.SCREENSHARE) {
+                const { width: _width, height: _height } = screenshareFilmstripDimensions.thumbnailSize ?? {
+                    width: undefined,
+                    height: undefined
+                };
+
+                size = {
+                    _width,
+                    _height
+                };
+            }
+            break;
+        }
     }
 
     if (ownProps.width) {
@@ -1395,3 +1411,6 @@ function _mapStateToProps(state: IReduxState, ownProps: any): Object {
 }
 
 export default connect(_mapStateToProps)(withStyles(translate(Thumbnail), defaultStyles));
+
+
+
